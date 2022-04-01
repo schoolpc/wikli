@@ -1,0 +1,286 @@
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>scpc-wiki</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-language_tools.js"></script>
+    <script src="https://cloud9ide.github.io/emmet-core/emmet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-emmet.js"></script>
+    
+    <style>
+        p{
+            margin: 0 !important;;
+            line-height:8mm;
+        }
+        a{
+            text-decoration: none;
+        }
+        a:hover{
+            text-decoration:underline;
+        }
+    </style>
+</head>
+<body class="p-3 bg-dark bg-gradient">
+    <div class="card bg-light mb-3 p-3">
+        <p class="h1">SCPC-Wiki</p>
+        
+    </div>
+    <div class="mx-2">
+        <div class="row">
+            <div class=" col-lg-2 my-3">
+                <div class="card">
+                    <div class="card p-2">
+                        <p class="h3">目次</p>
+                    </div>
+                    <li class=" list-group-item py-2 px-2">
+                        <a href="index.html" class="h5 ">トップページ</a>
+                    </li>
+                    <ul id="threads" class="list-group list-group-flush p-2">
+                    </ul>
+                    <div class="card">
+                        <p class="h4 card-footer card-header">
+                            要素を追加
+                        </p>
+                        <div class="card-body">
+                            <div class="">
+                                <input id="thadd" type="text" class=" form-control mb-2" placeholder="タイトルを入力">
+                                <button onclick="send($('#thadd').val())" class="btn btn-primary">送信</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col" id="cont">
+                
+                <div class="card">
+                    <div class="card-header">
+                        <p class="h3">トップページ</p>
+                    </div>
+                    <div class="card-body">
+                        <p class="h3">はじめに</p>
+                        <p class="mx-1 mb-1">
+                            検索では出てこないのでブックマークしておいた方がいいです。<br>
+                            最低限基本的なpcのスキルはないと厳しいです。<br>
+                            分かんないときは取り敢えずググって下さい<br>
+                            授業時以外はLTEにしといた方がいいです。<br>
+                            あといろいろ自己責任でお願いします。<br>
+                        </p>
+                        <p class="h3">編集について</p>
+                        <p class="mx-1 mb-1">
+                            基本的にhtmlとbootstrapを使って誰でも編集することができます。<br>
+                            順番は負の値も含めて値が小さいほど上になります。<br>
+                            タイプはheadにすると見出し的なやつになります<br>
+                            ページを削除するときは、安全装置としてタイトルと内容を全て消さないと削除できないようになっています。<br>
+                            画像は別のアップローダ等に上げて埋め込んでください。<br>
+                            テストページ以外で荒らしたり悪意のあるコードを仕込むのはやめてください。(scriptタグは無効化してある)
+                        </p>
+                        このサイトのqrコード↓<br>
+                        <img src="https://drive.google.com/uc?id=1SbdKS2Moc3f544h7hUrOKEONH3_aAXMe"><br>
+                        <a href="2048.html">2048</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 my-3">
+                <div class="card">
+                    <div class="card-header card-header">
+                        <p class="h3">編集ログ</p>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul id="logs" class="list-group list-group-flush">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</body>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAT_If1eO4xYmeHdAyAqLcovK_boEOaEJ8",
+        authDomain: "scpc-wiki.firebaseapp.com",
+        databaseURL: "https://scpc-wiki-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "scpc-wiki",
+        storageBucket: "scpc-wiki.appspot.com",
+        messagingSenderId: "907601293314",
+        appId: "1:907601293314:web:60ca98cbd18cea05ff371b",
+        measurementId: "G-DYK2D9BQXC"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.database();
+    var root = db.ref("root");
+
+    var thref = db.ref("root/threads");
+    var contref = db.ref("root/conts");
+    var logref = db.ref("root/logs")
+
+    var threadsarea = $("#threads");
+    var contarea = $("#cont")
+    var logarea = $("#logs")
+
+
+    var url = new URL(window.location.href);
+    var params = url.searchParams;
+
+    var editor
+
+    if(params.get('p')){
+        try {
+            contarea.html('<p class="text-light">now loading ...</p>')
+        var pid = params.get('p');
+        var pref = db.ref("root/conts/"+pid)
+        pref.on('value', (snapshot) => {
+            var data = snapshot.val();
+            var title = data.title;
+            var cont = data.cont;
+            var score = data.score;
+            var type  = data.type
+            var item = `
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <button class="nav-link active"id="nav-home-tab"data-bs-toggle="tab"data-bs-target="#nav-home"type="button"role="tab"aria-controls="nav-home"aria-selected="true">
+                        閲覧
+                    </button>
+                    <button class="nav-link"id="nav-profile-tab"data-bs-toggle="tab"data-bs-target="#nav-profile"type="button"role="tab"aria-controls="nav-profile"aria-selected="false">
+                        編集
+                    </button>
+                </div>
+            </nav>
+            <div class="tab-content" id="nav-tabContent">
+                <div class="tab-pane fade show active bg-white p-4"id="nav-home"role="tabpanel"aria-labelledby="nav-home-tab">
+                    `+ cont +`
+                </div>
+                <div class="tab-pane fade bg-white p-4"id="nav-profile"role="tabpanel"aria-labelledby="nav-profile-tab">
+                    タイトル<input class="form-control w-75 mb-2" id="title" value="`+ title +`">
+                    順番<input class="form-control w-25 mb-2" id="score" value="`+ score +`"type="number" pattern="^[0-9]+$">
+                    タイプ<input type="text" class="form-control w-25 mb-2" id="type" value="`+ type +`">
+                    <div id="editor" style="height: 600px" class="mb-2"></div>
+                    コメント<input class="form-control mb-2" id="logadd">
+                    <button onclick="edit()" class="btn btn-primary my-2">送信</button>
+                    <button class="btn btn-danger" onclick="remove()">削除</button>
+                </div>
+            </div>
+            `;
+            contarea.html(item);
+        editor = ace.edit("editor");
+        editor.$blockScrolling = Infinity;
+        editor.setOptions({
+          enableBasicAutocompletion: true,
+          enableSnippets: true,
+          enableLiveAutocompletion: true,
+          enableEmmet: true
+        });
+        editor.setTheme("ace/theme/monokai");
+        editor.getSession().setMode("ace/mode/html");
+        editor.setFontSize(16)
+        editor.insert(cont);
+        });
+        } catch (error) {
+            var item =`
+            <h1 class="text-light">エラー</h1>
+            `
+            contarea.html(item);
+        }
+    }
+
+    contref.orderByChild('score').on('child_added', (snapshot) => {
+        var data = snapshot.val()
+        var title = data.title
+        var ID = data.ID;
+        var type = data.type;
+        var item = "<li class='list-group-item py-1 px-3'><a href='index.html?p="+ ID +"' class=''>"+ title +"</a></li>"
+        if(type == "head"){
+            item = "<li class='list-group-item py-1 px-1'><a href='index.html?p="+ ID +"' class='p-0 h5'>"+ title +"</a></li>"
+        }
+        threadsarea.append(item);
+    });
+
+    logref.on('child_added', (snapshot) => {
+        var data = snapshot.val()
+        var title = data.title
+        var ID = data.ID;
+        var log = data.log;
+        var time = data.time;
+        var item = "<li class='list-group-item py-1 px-3'><a href='index.html?p="+ ID +"' class=''><strong>"+ title +"</strong></a><br>("+time+")<br>"+ log +"</li>"
+        logarea.prepend(item);
+    });
+
+    function send (title){
+        if(title != ""){
+            var ID = new Date().getTime().toString();
+            var time = new Date().toLocaleString();
+            var cont = db.ref("root/conts/"+ID);
+            var log = db.ref("root/logs/"+ID);
+            var logcont = title + "を追加"
+            var type = "normal";
+            $('#thadd').val("")
+            log.set({
+                title:title,
+                ID:ID,
+                time:time,
+                log:logcont
+            });
+            cont.set({
+                title:title,
+                ID:ID,
+                score:0,
+                type:type,
+                cont:"<h1>"+ title +"</h1>"
+            });
+        }
+    }
+
+    function edit (){
+        var cont = editor.getValue();
+        var cont = cont.replace(/(<script.*>.*<\/script>)/sgi, "")
+        var ID = params.get('p');
+        var title = $("#title").val();
+        title = title.replace(/(<([^>]+)>)/gi, '');
+        var score = $("#score").val()||0;
+        score = score - 0
+        var logref = db.ref("root/logs/"+new Date().getTime().toString());
+        var time = new Date().toLocaleString();
+        var contref = db.ref("root/conts/"+ID);
+        type = "normal"
+        var type = $("#type").val();
+        var log = $("#logadd").val();
+        log = log.replace(/(<([^>]+)>)/gi, '');
+        if(type == "head")
+        console.log(type)
+        if(cont != "" && title != "" && type != ""){
+            contref.set({
+                title:title,
+                ID:ID,
+                score:score,
+                type:type,
+                cont:cont
+            })
+            logref.set({
+                title:title,
+                ID:ID,
+                time:time,
+                log:log
+            })
+        }
+    }
+
+    function remove (){
+        var title = $("#title").val();
+        var score = $("#score").val();
+        var cont = editor.getValue();
+        var ID = params.get('p');
+        var contref = db.ref("root/conts/"+ID);
+        if(title == "" && cont == "" &&score == ""){
+            contref.remove();
+            window.location.href = "index.html"
+        }
+    }
+</script>
+</html>
